@@ -30,7 +30,7 @@
   - name: date
     title: Date
     type: date_filter
-    default_value: ''
+    default_value: '12 months'
     allow_multiple_values: true
     required: false
     ui_config:
@@ -103,15 +103,12 @@
   - name: target_currency
     title: Target Currency
     type: field_filter
-    # default_value: "{{ _user_attributes['cortex_cross_media_default_currency'] }}"
     default_value: USD
     allow_multiple_values: false
     required: false
     ui_config:
       type: dropdown_menu
       display: inline
-    # explore: currency_conversion
-    # field: currency_conversion.to_currency
     explore: cross_media_target_currency_list_sdt
     field: cross_media_target_currency_list_sdt.target_currency
 ###############################################################################################

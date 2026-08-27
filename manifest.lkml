@@ -1,16 +1,13 @@
 constant: CONNECTION_NAME {
-  value: "connection name"
-  export: override_required
+  value: "default_bigquery_connection"
 }
 
 constant: GCP_PROJECT_ID {
-  value: "gcp project id"
-  export: override_required
+  value: "rf-looker-core-argolis"
 }
 
 constant: REPORTING_DATASET {
-  value: "reporting dataset"
-  export: override_required
+  value: "cortex_reporting"
 }
 
 #########################################################
@@ -252,7 +249,7 @@ constant: html_format_big_numbers {
   {%- if abs_value >=1000000000 -%}
     {{pos_neg}}{{ abs_value | divided_by: 1000000000.0 | round: 1 }}B
   {%- elsif abs_value >=1000000 -%}
-    {{pos_neg}}{{ abs_value | divided_by: 1000000.0 | round: 1 }}M
+    {{pos_neg}}{{ abs_value | divided_by: 1000.0 | round: 1 }}M
   {%- elsif abs_value >=1000 -%}
     {{pos_neg}}{{ abs_value | divided_by: 1000.0 | round: 1 }}K
   {%- else -%}
@@ -443,7 +440,7 @@ constant: link_map_cross_media_detail_set {
 #       cross_media_4_detailed_performance      Detailed Performance    1,2,3,4,5,6,7
 #
 #       - example syntax:
-#           "cross_media_1_overview|Overview|1,2,3||cross_media_2_campaigns|Campaigns|1,2,3||cross_media_3_countries|Audience Type|1,2,3"
+#           \"cross_media_1_overview|Overview|1,2,3||cross_media_2_campaigns|Campaigns|1,2,3||cross_media_3_countries|Audience Type|1,2,3\"
 #}
 constant: link_map_cross_media_dash_bindings_overview {
   value: "cross_media_1_overview|Overview|1,2,3,4,5,6,7"
@@ -1005,82 +1002,19 @@ constant: link_build_explore_link_variable {
   "
 }
 
-#-->link_build_explore_url
-#{
-# Generates an Explore url and returns it as either:
-#   a. the Explore url opened as a drill modal in the frontend UI when use_url_variable == false (which is the default)
-#   b. a liquid variable named explore_link which can be referenced in a field's html property when use_url_variable == true
-#
-# Requires these to be added to a measure's link property::
-#     - @{link_build_variable_defaults}
-#     - the link variable to be included in the measure's link url property:
-#             {% assign link = link_generator._link %}
-#     - one or more drill_fields:
-#         {% assign drill_fields = sales_orders.ordered_date,sales_orders__lines.tootal_sales_amount_target_currency %}
-#     - settings for vis_config. Pass as one of the look_vis_ constants or define directly.
-#         @{link_vis_line_chart_1_date_1_measure}
-#         OR
-#         {% assign vis_config = '{\"type\":\"looker_grid\",\"series_cell_visualizations\":{}}' | url_encode | prepend: '&vis_config=' %}
-#     - @{link_build_explore_url}
-#
-# Optional Inputs (see link_build_variable_defaults for default values) :
-#   use_different_explore
-#   target_model
-#   target_explore
-#   filters_mapping
-#   use_qualified_filter_names
-#   default_filters
-#   use_default_filters_to_override
-#   use_url_variable
-#   pivots
-#   subtotals
-#   sorts
-#   limit
-#   column_limit
-#   total
-#   row_total
-#   query_timezone
-#   dynamic_fields
-#
-# Steps Taken:
-#   1. Assigns values to these liquid variables:
-#         content is set to explore
-#         link_path as derived from {{link}} which the LookML Developer adds when setting the field's link property
-#         link_query_parameters
-#         drill_fields
-#         target_model and target_explore if use_different_explore == false
-#   2. Calls link_build_context
-#   3. If use_different_explore == true calls link_build_match_filters_to_destination else assigns
-#      filters_array_destination to match filters_array_source
-#   4. Calls link_build_filter_string
-#   5. If default_filters is not blank calls link_build_default_filter_string
-#   6. Assigns value to target_content_filter based on true or false value for use_default_filters_to_override
-#   7. Calls link_build_explore_link_variable
-#   8. If use_url_variable == false returns final Explore url which opens a drill modal
-#      else returns a liquid variable called explore_link which can be referenced in a field's html property.
-#}
 constant: link_build_explore_url {
   value: "
   {% assign content = '/explore/' %}
-  {% assign link_path =  link | split: '?' | first %}
-  {% assign link_path =  link_path | split: '/'  %}
   {% assign link_query = link | split: '?' | last %}
   {% assign link_query_parameters = link_query | split: '&' %}
-  {% assign drill_fields = drill_fields | prepend:'fields='%}
 
   {% if use_different_explore == false %}
-    {% assign target_model = link_path[1] %}
-    {% assign target_explore = link_path[2] %}
+    {% assign target_model = _model._name %}
+    {% assign target_explore = _explore._name %}
   {% endif %}
 
   @{link_build_context}
-
-  {% if use_different_explore %}
-    @{link_build_match_filters_to_destination}
-  {% else %}
-    {% assign filters_array_destination = filters_array_source %}
-  {% endif %}
-
+  @{link_build_match_filters_to_destination}
   @{link_build_filter_string}
 
   {% if default_filters != '' %}
@@ -1088,40 +1022,26 @@ constant: link_build_explore_url {
   {% endif %}
 
   {% if use_default_filters_to_override == true and default_filters != '' %}
-    {% assign target_content_filters = filter_string | append:'&' | append: default_filter_string | prepend:'&' %}
+    {% assign target_content_filters = default_filter_string | append: '&' | append: filter_string %}
   {% elsif use_default_filters_to_override == false and default_filters != '' %}
-    {% assign target_content_filters = default_filter_string | append:'&' | append: filter_string | prepend:'&' %}
+    {% assign target_content_filters = filter_string | append: '&' | append: default_filter_string %}
   {% else %}
-    {% assign target_content_filters = filter_string | prepend:'&' %}
+    {% assign target_content_filters = filter_string %}
   {% endif %}
 
-  {% comment %} Builds final link to be presented in frontend {% endcomment %}
   @{link_build_explore_link_variable}
-  {% if use_url_variable == false %}
-    {{explore_link}}
-  {% endif %}
+  {{ explore_link }}
   "
 }
 
-#-->link_build_explore_cross_media_campaign_drill
-#{
-# Generates a table of campaigns with these characteristics:
-#   - sorted in descending order for the KPI initiating the drill
-#   - with cell visualization for the KPI initiating the drill
-#   - table includes set of fields as defined in link_map_cross_media_detail_set
-#}
 constant: link_build_explore_cross_media_campaign_drill {
-  value: "@{link_build_variable_defaults}
-  {% assign link = link_generator._link %}
-  {% assign active_field = _field._name | remove: '_formatted' %}
-  @{link_map_cross_media_detail_set}
-  {% assign cell_visualization = '\"' | append: active_field | append: '\":{\"is_active\":true}' %}
-  {% assign sorts = active_field | append: '+desc' %}
-  {% assign total = 'on' %}
-  @{link_vis_table_assign_cell_visualization}
-  @{link_build_explore_url}"
+  value: "
+    @{link_build_variable_defaults}
+    {% assign link = link_generator._link %}
+    {% assign use_different_explore = true %}
+    {% assign target_explore = 'cross_media_campaign_daily_agg' %}
+    @{link_map_cross_media_detail_set}
+    @{link_vis_table}
+    @{link_build_explore_url}
+  "
 }
-
-#} end constants for link build
-
-#} end constants for links

@@ -1,7 +1,7 @@
 datagroup: cortex_cross_media_default_datagroup {
   max_cache_age: "12 hours"
-  sql_trigger: SELECT MAX(LAST_UPDATED_TS) FROM `@{GCP_PROJECT_ID}.@{REPORTING_DATASET}.CrossMediaCampaignDailyAgg` ;;
-  description: "Triggers when either the maximum cache age surpasses 12 hours or when the maximum value for the Last UpdateD Timestamp in CrossMediaCampaignDailyAgg changes."
+  sql_trigger: SELECT CURRENT_DATE() ;;
+  description: "Triggers daily"
 }
 
 datagroup: one_time {
